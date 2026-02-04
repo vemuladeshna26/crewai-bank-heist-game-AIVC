@@ -1,0 +1,158 @@
+ui_css_generation:
+  description: >
+    1. Read UI/UX requirements from {input_path} (theme colors, fonts, spacing, layout hints).  
+    2. Load the static HTML template from {template_path}.  
+    3. Locate—or insert if missing—a <canvas id="gameCanvas"> element where the game will render.  
+    4. Create—a container for A panel showing three cards to the right inside the game container.  
+    5. Generate semantic HTML for these elements, preserving the template’s existing structure.  
+    6. Write responsive CSS inside a single <style> tag:
+       - **Desktop**: canvas and controls side‑by‑side.  
+       - **Mobile**: canvas stacked above controls.  
+       - Apply your theme’s colors and typography. 
+    7. Write **one** <style> tag (mobile-first):  
+       - **≤ 800 px**:  
+         * Canvas fills full width; card panel collapses into a fixed column on the right (vertical scroll allowed).  
+         * Buttons scale to ≥ 48 px hit area.  
+         * Hide purely decorative elements to maximise play area. 
+         
+       - **> 800 px**:  
+         * Canvas and card panel sit side-by-side in a flex layout; card panel has a max-width so canvas dominates.  
+       - Apply theme colours, typography, shadows, and subtle animations from requirements.  
+       - Provide **cool-down styling** for disabled cards (e.g. grayscale + 60 % opacity).  
+    8. Ensure **Play, Restart, Settings, Instructions** buttons remain visible and tappable at all break-points.   
+    9. Wrap **only** the new markup + CSS in:
+       <!-- UI/CSS Code Segment -->  
+    10. Do **not** modify any other template content.
+  expected_output: >
+    HTML and CSS snippet labeled "UI/CSS Code Segment".
+
+game_logic_generation:
+  description: >
+    1. Parse core mechanics from {input_path}: stealth rules, win/lose conditions, card effects. Integrate the movements of the player and enemies. 
+    2. Confirm <canvas id="gameCanvas"> exists in the template.  
+    3. Generate a GameLogic class in one <script> block with:
+       - constructor(canvasId) to set up context and state.  
+       - init() to initialize the grid and entity positions.  
+       - draw() to render walls, player, enemies, and cards.  
+       - movePlayer(direction) with boundary and collision checks.  
+       - applyCardEffect(cardId) for cards when clicked.  
+       - checkWinLose() to detect key pick‑up or enemy detection.  
+       - Comments on each method.  
+       - integrate player enemy movements in moveEnemy()
+       - moveEnemy() to integrate enemy patrol / pursuit. 
+       - ADD BUTTONS FOR MOVEMENTS INSTEAD OF touch controls, up/down/left/right buttons to used for moving the player. 
+       - A 3x3 radar around the enemy, that is used to detect collision with the player.
+       - If any cards are to be used, place them to the right in a container.
+    4. Place the three card elements in the right-hand panel created by ui_css_generation.
+    5. Label and output **only** this code as:
+       // JavaScript Logic Segment  
+    6. Do **not** touch any HTML outside this script block.
+    
+  expected_output: >
+    JavaScript class implementing core gameplay logic, labeled "JavaScript Logic Segment".
+
+user_input_generation:
+  description: >
+    Generate user input handling code based on control requirements from {input_path}.
+    - Capture movement inputs (Arrow keys + WASD).
+    - Capture touch gestures for mobile support.
+    - Attach event listeners for Play, Restart, Settings, and Instructions buttons.
+    - **If UI and Logic are separate, define a Game controller class that:**
+      * Instantiates UI and Logic classes.
+      * Connects button actions to game transitions.
+      * Ensures Play button correctly starts the game.
+    - Without this, navigation will break — prioritize correct wiring.
+    - Label your output as // User Input Segment.
+  expected_output: >
+    JavaScript for user inputs + Game controller class, labeled "User Input Segment".
+
+generate_image_assets:
+  description: >
+    Generate pixel-art and futuristic neon-style images for Bank Heist - Cards Edition based on {input_path}.
+    - Use DallE or other image generation tools.
+    - Save all images under images/ folder.
+    - After saving images:
+      * Create a manifest JSON file formatted as assets under which each filename and url is present
+    - Ensure no extra metadata (only filename and url).
+    - Save the manifest as images/manifest.json.
+  expected_output: >
+    - All generated images saved under images/.
+    - A manifest.json listing assets with filename and URL format.
+  agent: image_assets_agent
+
+generate_audio_assets:
+  description: >
+    Generate stealth-themed background music and card sound effects based on {input_path}.
+    - Save all audio files under sounds/ folder.
+    - Create a manifest JSON file formatted as assets under which each filename and url is present
+    - No extra metadata (only filename and url).
+    - Save the manifest as sounds/manifest.json.
+  expected_output: >
+    - All generated sounds saved under sounds/.
+    - A manifest.json listing sounds with filename and URL.
+  agent: audio_assets_agent
+
+
+integrate_assets:
+  description: >
+    Read the generated image and audio manifests.
+    - Embed <img> and <audio> tags into {template_path}.
+    - Update CSS backgrounds and JavaScript preload calls correctly.
+    - Ensure that all asset paths are correctly referenced in the final game file.
+    - Label code inserted as <!-- Asset Integration Code Segment -->.
+  expected_output: >
+    Updated HTML/CSS/JS snippets with embedded assets.
+  agent: asset_integrator_agent
+
+template_integration:
+  description: >
+    1. Load the template from {template_path}. Change the game title.
+    2. Find placeholders:
+       - [[UI_CSS]]  
+       - [[JS_CODE]] inside GameLogic  class only
+    3. Replace [[UI_CSS]] with the UI/CSS Code Segment (including the <style> tag).  
+    4. In place of [[JS_CODE]], insert one <script> block that concatenates in order:
+       a. Map Config Segment  
+       b. JavaScript Logic Segment  
+       c. User Input Segment  
+    5. Ensure all other template HTML remains exactly as‑is and button IDs/classes stay intact.  The class Game should be the same, no changes in it.
+    6. The Play/Settings/Instructions/Reset button in should work.
+    6. Wrap the merged file in:
+       <!-- Integrated HTML File -->
+  expected_output: >
+    Fully merged HTML file ready for gameplay.
+
+testing_and_debugging:
+  description: >
+    Thoroughly test the integrated HTML file.
+    - Verify that canvas, card panel, and assets render properly.
+    - Confirm button functionalities (Play, Restart, Settings, Instructions).
+    - Confirm that a Game controller class exists.
+    - Simulate player/guard interactions and card activations.
+    - Document any functional bugs and recommend fixes.
+  expected_output: >
+    Fully functional final HTML file labeled <!-- Final HTML Output -->.
+
+final_output:
+  description: >
+    Package the final deliverables:
+    - Create an output/ directory.
+      * output/images (copy all images)
+      * output/sounds (copy all sounds)
+      * output/game.html (final playable HTML)
+    - Print the final output tree.
+    - Confirm again that Play, Restart, Settings, Instructions buttons are functional, and Game class is present.
+  expected_output: >
+    Tree view of output/ containing images/, sounds/, and game.html.
+  agent: template_integrator_agent
+
+final_html_building:
+  description: >
+    Compile and write the final HTML output.
+    - Merge UI, Logic, Input Handling, and Asset Integration segments into one HTML file.
+    - Ensure Play, Restart, Settings, and Instructions work as intended.
+    - Save it under output/game.html.
+    - Game controller class should properly orchestrate UI and Logic layers.
+  expected_output: >
+    Complete and fully playable HTML file stored under output/game.html.
+  agent: final_html_builder_agent
