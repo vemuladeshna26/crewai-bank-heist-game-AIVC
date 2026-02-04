@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport" />
+    <title>The Bank Heist - Cards Edition</title>
+    <style>
+      body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Orbitron', sans-serif;
+            background-color: #1a1a2e;
+            color: #ffffff;
+        }
+        .screen {
+            display: none;
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        button {
+            background: linear-gradient(135deg, #283c86 0%, #45a247 100%);
+            border: 2px solid #fff;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            text-transform: uppercase;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            padding: 12px 30px;
+            margin: 20px auto 0;
+            display: block;
+            width: 215.15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #45a247 0%, #283c86 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        #game-title {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            color: #e94560;
+        }
+        #game-controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(26, 26, 46, 0.8);
+            padding: 10px 0;
+            z-index: 101;
+            display: none;
+            text-align: center;
+        }
+        #game-controls button {
+            display: inline-block;
+            width: auto;
+            padding: 8px 15px;
+            margin: 0 5px;
+            font-size: 14px;
+        }
+        #hud {
+            position: fixed;
+            top: 50px;
+            left: 0;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #1a1a2e;
+            padding: 10px;
+            z-index: 100;
+            display: none;
+            font-family: 'Orbitron', sans-serif;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 100px);
+            overflow: hidden;
+            background-color: #0f3460;
+            border: 2px solid #e94560;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+        #game-screen {
+            background: none;
+        }
+        #instructions-screen {
+            z-index: 200;
+        }
+        #instructions-screen.overlay {
+            background: rgba(0, 0, 0, 0.8);
+        }
+        #instructions-screen .container {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+        @media (max-width: 600px) {
+            #game-title {
+                font-size: 2em;
+            }
+            button {
+                width: 80%;
+                font-size: 16px;
+            }
+            #game-controls button {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+        }
+        /* Custom styles for the new elements */
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #cardContainer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            height: 100px;
+            background-color: rgba(26, 26, 46, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .card {
+            display: inline-block;
+            width: 90px;
+            height: 90px;
+            margin: 0 5px;
+            background-color: #e94560;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: scale(1.1);
+        }
+    </style>
+  </head>
+  <body>
+    <div id="game-controls">
+      <button id="game-menu-button">Menu</button>
+      <button id="game-restart-button">Restart</button>
+      <button id="game-instructions-button">Instructions</button>
+    </div>
+    <!-- Use HUD for Score, High Score, and Other Game Information -->
+    <div id="hud"></div>
+
+    <div id="start-menu-screen" class="active screen">
+      <div class="container">
+        <h1 id="game-title">The Bank Heist - Cards Edition</h1>
+        <button id="play-button">Play</button>
+        <button id="settings-button">Settings</button>
+        <button id="instructions-button">Instructions</button>
+      </div>
+    </div>
+
+    <div id="settings-screen" class="screen">
+      <div class="container">
+        <h2>Settings</h2>
+        <!-- Add settings options here -->
+        <button id="settings-back-button">Back</button>
+      </div>
+    </div>
+
+    <div id="instructions-screen" class="screen">
+      <div class="container">
+        <h2>Instructions</h2>
+        <h3>How to Play:</h3>
+        <ul>
+          <li>Navigate the bank using your character.</li>
+          <li>Use cards to activate special powers.</li>
+        </ul>
+        <h3>Controls:</h3>
+        <ul>
+          <li>Arrow keys/WASD for movement.</li>
+          <li>Click/tap cards for actions.</li>
+        </ul>
+        <button id="instructions-back-button">Back</button>
+      </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+      <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="cardContainer">
+          <div class="card" style="background: url('images/card1.png'); background-size: cover;">Card 1</div>
+          <div class="card" style="background: url('images/card2.png'); background-size: cover;">Card 2</div>
+          <div class="card" style="background: url('images/card3.png'); background-size: cover;">Card 3</div>
+          <!-- Add More Cards Here -->
+        </div>
+      </div>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+      <div class="container">
+        <div id="game-over-message"></div>
+        <button id="play-again-button">Play Again</button>
+        <button id="main-menu-button">Main Menu</button>
+      </div>
+    </div>
+    <audio autoplay="" id="background-music" loop="">
+      <source src="sounds/bg_loop.mp3" type="audio/mpeg" />
+    </audio>
+    <audio id="start-game-sound">
+      <source src="sounds/start-game-sound.mp3" type="audio/mpeg" />
+    </audio>
+    <audio id="end-game-sound">
+      <source src="sounds/game_over.mp3" type="audio/mpeg" />
+    </audio>
+    <audio id="victory-sound">
+      <source src="sounds/victory.mp3" type="audio/mpeg" />
+    </audio>
+    <audio id="dash-sound">
+      <source src="sounds/dash.mp3" type="audio/mpeg" />
+    </audio>
+    <audio id="stealth-sound">
+      <source src="sounds/stealth.mp3" type="audio/mpeg" />
+    </audio>
+    <audio id="disable-sound">
+      <source src="sounds/disable.mp3" type="audio/mpeg" />
+    </audio>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const game = new Game();
+        game.prepareGame();
+
+        document.getElementById('play-button').addEventListener('click', function() {
+          document.getElementById('start-game-sound').play();
+          game.startGame();
+        });
+
+        document.getElementById('play-again-button').addEventListener('click', function() {
+          document.getElementById('start-game-sound').play();
+          game.startGame();
+        });
+
+        document.getElementById('game-restart-button').addEventListener('click', function() {
+          document.getElementById('start-game-sound').play();
+          game.startGame();
+        });
+
+        class Game {
+          constructor() {
+            this.ui = new GameUI();
+            this.logic = new GameLogic();
+            this.lastFrameTime = 0;
+            this.updateInterval = 1000 / 60;
+            this.done = false;
+            this.isPaused = false;
+            this.animationFrameId = null;
+          }
+          prepareGame() {
+            const gameContainer = document.getElementById('game-screen');
+            this.assignButtons();
+          }
+          startGame() {
+            this.ui.startGame();
+            if (this.animationFrameId) {
+              cancelAnimationFrame(this.animationFrameId);
+            }
+            this.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this));
+          // Start game logic here;
+          }
+          assignButtons() {
+            const playButton = document.getElementById('play-button');
+            const settingsButton = document.getElementById('settings-button');
+            const instructionsButton = document.getElementById('instructions-button');
+            const playAgainButton = document.getElementById('play-again-button');
+            const mainMenuButtons = document.querySelectorAll('#game-over-main-menu-button, #settings-back-button, #instructions-back-button');
+            const gameMenuButton = document.getElementById('game-menu-button');
+            const gameRestartButton = document.getElementById('game-restart-button');
+            const gameInstructionsButton = document.getElementById('game-instructions-button');
+
+            playButton.addEventListener('click', this.startGame.bind(this));
+            settingsButton.addEventListener('click', this.ui.settings.bind(this.ui));
+            instructionsButton.addEventListener('click', this.ui.instructions.bind(this.ui));
+            playAgainButton.addEventListener('click', this.startGame.bind(this));
+            mainMenuButtons.forEach(button => button.addEventListener('click', () => {
+              this.ui.mainMenu();
+            }));
+            gameMenuButton.addEventListener('click', () => {
+              this.ui.mainMenu();
+            });
+            gameRestartButton.addEventListener('click', this.startGame.bind(this));
+            gameInstructionsButton.addEventListener('click', () => {
+              this.pause();
+              this.ui.swapToScreen(this.ui.instructionsScreen);
+              document.getElementById('instructions-back-button').addEventListener('click', () => {
+                this.ui.swapToScreen(this.ui.gameContainer);
+                this.resume();
+              }, { once: true });
+            });
+          }
+          gameOver(isWin) {
+            const sound = isWin ? document.getElementById('victory-sound') : document.getElementById('end-game-sound');
+            sound.play();
+            // Handle the game over logic, display appropriate screens/messages
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

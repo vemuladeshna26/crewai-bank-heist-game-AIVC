@@ -1,0 +1,689 @@
+<!-- Integrated HTML File -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport" />
+    <title>Bank Heist - Cards Edition</title>
+    <style>
+      body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Orbitron', sans-serif;
+            background-color: #1a1a2e;
+            color: #ffffff;
+        }
+        .screen {
+            display: none;
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        button {
+            background: linear-gradient(135deg, #283c86 0%, #45a247 100%);
+            border: 2px solid #fff;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            text-transform: uppercase;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            padding: 12px 30px;
+            margin: 20px auto 0;
+            display: block;
+            width: 215.15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #45a247 0%, #283c86 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        #game-title {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            color: #e94560;
+        }
+        #game-controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(26, 26, 46, 0.8);
+            padding: 10px 0; /* Changed padding */
+            z-index: 101;
+            display: none;
+            text-align: center; /* Center align the content */
+        }
+        #game-controls button {
+            display: inline-block;
+            width: auto;
+            padding: 8px 15px;
+            margin: 0 5px; /* Reduced side margins */
+            font-size: 14px;
+        }
+        #hud {
+            position: fixed;
+            top: 50px;
+            left: 0;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #1a1a2e;
+            padding: 10px;
+            z-index: 100;
+            display: none;
+            font-family: 'Orbitron', sans-serif;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 100px);
+            overflow: hidden;
+            background-color: #0f3460;
+            border: 2px solid #e94560;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+        #game-screen {
+            background: none;
+        }
+        #instructions-screen {
+            z-index: 200;
+        }
+        #instructions-screen.overlay {
+            background: rgba(0, 0, 0, 0.8);
+        }
+        #instructions-screen .container {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+        @media (max-width: 600px) {
+            #game-title {
+                font-size: 2em;
+            }
+            button {
+                width: 80%;
+                font-size: 16px;
+            }
+            #game-controls button {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+        }
+
+        /* Mobile-first design */
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100% - 100px); /* Adjusting for HUD and controls */
+        }
+
+        #gameCanvas {
+            width: 100vw;
+            max-height: calc(100vh - 150px);
+            background-color: #0f3460; /* Dark blue background to match theme */
+            border: 2px solid #e94560; /* Theme color border */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        #card-panel {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            width: 95%;
+            max-width: 600px;
+            margin-top: 15px;
+            padding: 5px;
+            background-color: rgba(26, 26, 46, 0.9); /* Slightly transparent background for cards */
+            border-radius: 10px;
+        }
+
+        .card {
+            width: 75px; /* Fixed size for mobile */
+            height: auto;
+            margin: 0 5px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:disabled {
+            filter: grayscale(100%);
+            opacity: 0.6;
+        }
+
+        .card:hover {
+            transform: scale(1.1);
+        }
+
+        @media (min-width: 801px) {
+            #game-container {
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: center;
+            }
+
+            #gameCanvas {
+                width: 70vw;
+                height: 80vh; /* Allow space for card panel */
+                margin-right: 10px;
+            }
+
+            #card-panel {
+                flex-direction: column;
+                width: 200px;
+                justify-content: flex-start;
+            }
+
+            .card {
+                width: 100%;
+                transition: transform 0.3s ease;
+            }
+        }
+    </style>
+  </head>
+  <body>
+    <div id="game-controls">
+        <button id="game-menu-button">Menu</button>
+        <button id="game-restart-button">Restart</button>
+        <button id="game-instructions-button">Instructions</button>
+    </div>
+    <!-- Use HUD for Score, High Score, and Other Game Information -->
+    <div id="hud"></div>
+
+    <div id="start-menu-screen" class="active screen">
+        <div class="container">
+            <h1 id="game-title">Bank Heist - Cards Edition</h1>
+            <button id="play-button">Play</button>
+            <button id="settings-button">Settings</button>
+            <button id="instructions-button">Instructions</button>
+        </div>
+    </div>
+
+    <div id="settings-screen" class="screen">
+        <div class="container">
+            <h2>Settings</h2>
+            <!-- Add settings options here -->
+            <button id="settings-back-button">Back</button>
+        </div>
+    </div>
+
+    <div id="instructions-screen" class="screen">
+        <div class="container">
+            <h2>Instructions</h2>
+            <h3>How to Play:</h3>
+            <ul>
+                <li>Instruction 1</li>
+                <li>Instruction 2</li>
+            </ul>
+            <h3>Controls:</h3>
+            <ul>
+                <li>Control 1</li>
+                <li>Control 2</li>
+            </ul>
+            <button id="instructions-back-button">Back</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div id="game-container">
+            <canvas id="gameCanvas"></canvas>
+            <div id="card-panel">
+                <img src="card_dash.png" id="card-dash" class="card"/>
+                <img src="card_stealth.png" id="card-stealth" class="card"/>
+                <img src="card_disable.png" id="card-disable" class="card"/>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+        <div class="container">
+            <div id="game-over-message"></div>
+            <button id="play-again-button">Play Again</button>
+            <button id="main-menu-button">Main Menu</button>
+        </div>
+    </div>
+    <audio autoplay="" id="background-music" loop="">
+      <source src="background-music.mp3" type="audio/mpeg" />
+    </audio>
+    <audio id="start-game-sound">
+      <source src="start-game-sound.mp3" type="audio/mpeg" />
+    </audio>
+    <!--Extra audio tags for sound effects-->
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        class GameUI {
+          constructor() {
+            this.startMenuScreen = document.getElementById('start-menu-screen');
+            this.settingsScreen = document.getElementById('settings-screen');
+            this.instructionsScreen = document.getElementById('instructions-screen');
+            this.gameContainer = document.getElementById('game-screen');
+            this.gameOverScreen = document.getElementById('game-over-screen');
+            this.gameControls = document.getElementById('game-controls');
+            this.hud = document.getElementById('hud');
+          };
+
+
+          swapToScreen(screen) {
+            this.startMenuScreen.classList.remove('active');
+            this.settingsScreen.classList.remove('active');
+            this.instructionsScreen.classList.remove('active');
+            this.gameContainer.classList.remove('active');
+            this.gameOverScreen.classList.remove('active');
+            screen.classList.add('active');
+
+            if (screen.id === 'game-screen') {
+                this.hud.style.display = 'block';
+                this.gameControls.style.display = 'block';
+            } else {
+                this.hud.style.display = 'none';
+                this.gameControls.style.display = 'none';
+            }
+          };
+
+          startGame() {
+            const startGameSound = document.getElementById('start-game-sound');
+            this.swapToScreen(this.gameContainer);
+            startGameSound.play();
+            // Your start game code here;
+          }
+
+          endGame() {
+            const endGameSound = document.getElementById('end-game-sound');
+            this.swapToScreen(this.gameOverScreen);
+            endGameSound.play();
+            // Your end game code here;
+          }
+
+          mainMenu() {
+            this.swapToScreen(this.startMenuScreen);
+          }
+
+          playAgain() {
+            this.swapToScreen(this.gameContainer);
+          }
+
+          settings() {
+            this.swapToScreen(this.settingsScreen);
+          }
+
+          instructions() {
+            this.swapToScreen(this.instructionsScreen);
+          }
+
+          // Your UI functions here;
+
+        }
+        class GameLogic {
+          constructor() {
+          }
+          // JavaScript Logic Segment
+
+          class GameLogic {
+              constructor(canvasId) {
+                  this.canvas = document.getElementById(canvasId);
+                  this.ctx = this.canvas.getContext('2d');
+                  this.gridSize = 50;
+                  this.tileSize = this.canvas.width / this.gridSize;
+                  this.player = { x: 0, y: 0, speed: 1 }; // Starting player position and speed
+                  this.guards = []; // Array to hold guard positions and states
+                  this.cards = ['dash', 'stealth', 'disable']; // Available card types
+                  this.activeCardEffect = null; // Current active card effect
+                  this.vaultKeyCollected = false; // Track if key is collected
+                  this.exitActivated = false; // Track if exit is ready
+                  this.init();
+              }
+
+              // Initialize game grid, place entities.
+              init() {
+                  this.player.x = Math.floor(Math.random() * this.gridSize);
+                  this.player.y = Math.floor(Math.random() * this.gridSize);
+                  // Initialize guards
+                  for (let i = 0; i < 3; i++) {
+                      this.guards.push({ x: Math.random() * this.gridSize, y: Math.random() * this.gridSize, state: 'normal' });
+                  }
+                  this.draw(); // Initial drawing of the game state
+              }
+
+              // Render the core game elements
+              draw() {
+                  this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                  this.drawGrid();
+                  this.drawPlayer();
+                  this.drawGuards();
+                  this.drawVaultAndExit();
+              }
+
+              // Draw the game grid
+              drawGrid() {
+                  this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                  for (let x = 0; x < this.gridSize; x++) {
+                      for (let y = 0; y < this.gridSize; y++) {
+                          this.ctx.strokeRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                      }
+                  }
+              }
+
+              // Draw the player on the canvas
+              drawPlayer() {
+                  this.ctx.fillStyle = '#0f0';
+                  this.ctx.fillRect(this.player.x * this.tileSize, this.player.y * this.tileSize, this.tileSize, this.tileSize);
+              }
+
+              // Draw guards with detection radius
+              drawGuards() {
+                  this.guards.forEach(guard => {
+                      this.ctx.fillStyle = guard.state === 'normal' ? '#f00' : '#555';
+                      if (guard.state === 'blind') {
+                          this.ctx.globalAlpha = 0.5;
+                      }
+                      this.ctx.fillRect(guard.x * this.tileSize, guard.y * this.tileSize, this.tileSize, this.tileSize);
+                      this.ctx.globalAlpha = 1.0;
+                  });
+              }
+
+              // Draw the vault and exit locations
+              drawVaultAndExit() {
+                  this.ctx.fillStyle = '#ff0';
+                  if (!this.vaultKeyCollected) {
+                      this.ctx.fillRect(48 * this.tileSize, 48 * this.tileSize, this.tileSize, this.tileSize); // Vault
+                  }
+                  if (this.exitActivated) {
+                      this.ctx.fillRect(0, 49 * this.tileSize, this.tileSize, this.tileSize); // Exit
+                  }
+              }
+
+              // Move player with boundary and collision checks
+              movePlayer(direction) {
+                  let { x, y } = this.player;
+                  if (direction === 'up' && y > 0) y -= this.player.speed;
+                  if (direction === 'down' && y < this.gridSize - 1) y += this.player.speed;
+                  if (direction === 'left' && x > 0) x -= this.player.speed;
+                  if (direction === 'right' && x < this.gridSize - 1) x += this.player.speed;
+
+                  // Check for collisions (walls, vault, or guards)
+                  if (/* collision checks */) {
+                      return; // Early return if collision detected
+                  }
+
+                  this.player.x = x;
+                  this.player.y = y;
+                  this.draw();
+              }
+
+              // Apply effects based on card used
+              applyCardEffect(cardId) {
+                  switch (cardId) {
+                      case 'dash':
+                          this.player.speed = 2; // Temporarily double the speed
+                          setTimeout(() => this.player.speed = 1, 5000); // Reset after duration
+                          break;
+                      case 'stealth':
+                          this.activeCardEffect = 'stealth';
+                          setTimeout(() => this.activeCardEffect = null, 5000);
+                          break;
+                      case 'disable':
+                          this.guards.forEach(guard => guard.state = 'frozen');
+                          setTimeout(() => this.guards.forEach(guard => guard.state = 'normal'), 5000);
+                          break;
+                  }
+                  this.draw();
+              }
+
+              // Check for win or lose conditions
+              checkWinLose() {
+                  if (this.vaultKeyCollected && this.player.x === 0 && this.player.y === 49) {
+                      console.log('Player wins!');
+                      return true;
+                  }
+
+                  this.guards.forEach(guard => {
+                      if (this.player.x === guard.x && this.player.y === guard.y && this.activeCardEffect !== 'stealth') {
+                          console.log('Player detected by guard!');
+                          return false;
+                      }
+                  });
+              }
+
+              // Logic for enemy movements and patrol behavior
+              moveEnemy() {
+                  this.guards.forEach(guard => {
+                      // Simple patrol logic; update guard position
+                      if (guard.state === 'normal') {
+                          // Example: Were moving guards in a fixed route, they could also have more complex AI
+                          guard.x = (guard.x + 1) % this.gridSize; // Simplified example logic
+                      }
+                      // Handle frozen and blind states separately
+                  });
+                  this.draw();
+              }
+          }
+
+          // Instantiation and usage
+          // Assume #gameCanvas exists; adjust ID if needed
+          const game = new GameLogic('gameCanvas');
+          // Bindings for interactions and events would go here, e.g.:
+          // document.addEventListener('keydown', (e) => game.movePlayer(e.key));
+
+          // User Input Segment
+
+          // JavaScript for user input handling and game controller
+
+          // Keyboard and swipe input handling
+          document.addEventListener('keydown', (event) => {
+              switch(event.key) {
+                  case 'ArrowUp':
+                  case 'w':
+                      gameLogic.movePlayer('up');
+                      break;
+                  case 'ArrowDown':
+                  case 's':
+                      gameLogic.movePlayer('down');
+                      break;
+                  case 'ArrowLeft':
+                  case 'a':
+                      gameLogic.movePlayer('left');
+                      break;
+                  case 'ArrowRight':
+                  case 'd':
+                      gameLogic.movePlayer('right');
+                      break;
+              }
+          });
+
+          // Capture touch gestures for swipe movement
+          let touchStartX, touchStartY, touchEndX, touchEndY;
+          document.addEventListener('touchstart', (event) => {
+              touchStartX = event.changedTouches[0].screenX;
+              touchStartY = event.changedTouches[0].screenY;
+          });
+
+          document.addEventListener('touchend', (event) => {
+              touchEndX = event.changedTouches[0].screenX;
+              touchEndY = event.changedTouches[0].screenY;
+              handleSwipeGesture();
+          });
+
+          // Determine swipe direction
+          function handleSwipeGesture() {
+              const diffX = touchEndX - touchStartX;
+              const diffY = touchEndY - touchStartY;
+              if (Math.abs(diffX) > Math.abs(diffY)) {
+                  if (diffX > 0) {
+                      gameLogic.movePlayer('right');
+                  } else {
+                      gameLogic.movePlayer('left');
+                  }
+              } else {
+                  if (diffY > 0) {
+                      gameLogic.movePlayer('down');
+                  } else {
+                      gameLogic.movePlayer('up');
+                  }
+              }
+          }
+
+          // Game controller setup to manage UI and logic
+          class GameController {
+              constructor() {
+                  this.gameUI = new GameUI();
+                  this.gameLogic = new GameLogic('gameCanvas');
+                  this.connectButtonActions();
+              }
+
+              connectButtonActions() {
+                  document.getElementById('playButton').addEventListener('click', () => this.startGame());
+                  document.getElementById('restartButton').addEventListener('click', () => this.restartGame());
+                  document.getElementById('settingsButton').addEventListener('click', () => this.showSettings());
+                  document.getElementById('instructionsButton').addEventListener('click', () => this.showInstructions());
+
+                  // Connect card panel actions
+                  document.getElementById('card-dash').addEventListener('click', () => this.gameLogic.applyCardEffect('dash'));
+                  document.getElementById('card-stealth').addEventListener('click', () => this.gameLogic.applyCardEffect('stealth'));
+                  document.getElementById('card-disable').addEventListener('click', () => this.gameLogic.applyCardEffect('disable'));
+              }
+
+              startGame() {
+                  this.gameUI.swapToScreen(document.getElementById('game-container'));
+                  this.gameLogic.init();
+              }
+
+              restartGame() {
+                  this.gameLogic.init();
+              }
+
+              showSettings() {
+                  this.gameUI.swapToScreen(document.getElementById('settings-screen'));
+              }
+
+              showInstructions() {
+                  this.gameUI.swapToScreen(document.getElementById('instructions-screen'));
+              }
+          }
+
+          // Instantiate GameController to kickstart the game
+          const gameController = new GameController();
+
+          // Your game logic here;
+
+        }
+        class Game {
+          constructor() {
+            this.ui = new GameUI();
+            this.logic = new GameLogic();
+            this.lastFrameTime = 0;
+            this.updateInterval = 1000 / 60;
+            this.done = false;
+            this.isPaused = false;
+            this.animationFrameId = null;
+          }
+          prepareGame() {
+            const gameContainer = document.getElementById('game-screen');
+            // Prepare game container DOM elements here;
+            // Connect DOM element to game logic or game ui accordingly;
+            this.assignButtons();
+          }
+          startGame() {
+            this.ui.startGame();
+            // Start game logic here;
+
+            // this.updateInterval = /* Your desired update interval */;
+
+            if(this.animationFrameId)
+            {
+                cancelAnimationFrame(this.animationFrameId);
+            }
+            this.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this));
+          }
+          updateGame() {
+            // Update game logic here;
+          }
+          resetGame() {
+            // Reset game logic here;
+            this.isPaused = false;
+            cancelAnimationFrame(this.animationFrameId);
+          }
+          pause() {
+            this.isPaused = true;
+            cancelAnimationFrame(this.animationFrameId);
+          }
+          resume() {
+            this.isPaused = false;
+            this.gameLoop();
+          }
+          gameLoop(timestamp) {
+            if (this.done) return;
+            const deltaTime = timestamp - this.lastFrameTime;
+            if (deltaTime > this.updateInterval) {
+              this.updateGame();
+              this.lastFrameTime = timestamp;
+            }
+            if(this.animationFrameId)
+            {
+                cancelAnimationFrame(this.animationFrameId);
+            }
+            this.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this));
+          }
+          assignButtons() {
+            const playButton = document.getElementById('play-button');
+            const settingsButton = document.getElementById('settings-button');
+            const instructionsButton = document.getElementById('instructions-button');
+            const playAgainButton = document.getElementById('play-again-button');
+            const mainMenuButtons = document.querySelectorAll('#game-over-main-menu-button, #settings-back-button, #instructions-back-button');
+            const gameMenuButton = document.getElementById('game-menu-button');
+            const gameRestartButton = document.getElementById('game-restart-button');
+            const gameInstructionsButton = document.getElementById('game-instructions-button');
+
+            playButton.addEventListener('click', this.startGame.bind(this));
+            settingsButton.addEventListener('click', this.ui.settings.bind(this.ui));
+            instructionsButton.addEventListener('click', this.ui.instructions.bind(this.ui));
+            playAgainButton.addEventListener('click', this.startGame.bind(this));
+            mainMenuButtons.forEach(button => button.addEventListener('click', () => {
+                this.ui.mainMenu();
+            }));
+            gameMenuButton.addEventListener('click', () => {
+                this.ui.mainMenu();
+            });
+            gameRestartButton.addEventListener('click', this.startGame.bind(this));
+            gameInstructionsButton.addEventListener('click', () => {
+                        this.pause();
+                        this.ui.swapToScreen(this.ui.instructionsScreen);
+                        document.getElementById('instructions-back-button').addEventListener('click', () => {
+                            this.ui.swapToScreen(this.ui.gameContainer);
+                            this.resume();
+                        }, { once: true });
+                    });
+
+            // Your button event listeners here
+          }
+        }
+        const game = new Game();
+        game.prepareGame();
+      });
+    </script>
+  </body>
+</html>
+<!-- End of Integrated HTML File -->

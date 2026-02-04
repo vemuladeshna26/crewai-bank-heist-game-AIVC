@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport" />
+  <title>The Bank Heist - Cards Edition</title>
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Orbitron', sans-serif; background-color: #1a1a2e; color: #ffffff; }
+    .screen { display: none; height: 100%; width: 100%; position: absolute; top: 0; left: 0; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+    .screen.active { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .container { text-align: center; max-width: 600px; width: 90%; }
+    button { background: linear-gradient(135deg, #283c86 0%, #45a247 100%); border: 2px solid #fff; border-radius: 8px; color: #fff; font-family: 'Orbitron', sans-serif; font-size: 18px; text-transform: uppercase; text-align: center; padding: 12px 30px; margin: 20px auto 0; display: block; width: 215px; cursor: pointer; transition: all 0.3s ease; }
+    button:hover { background: linear-gradient(135deg, #45a247 0%, #283c86 100%); transform: translateY(-2px); }
+    #game-title { font-size: 2.5em; margin-bottom: 30px; text-transform: uppercase; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); color: #e94560; }
+    #game-controls { position: fixed; top: 0; left: 0; width: 100%; background: rgba(26,26,46,0.8); padding: 10px 0; z-index: 101; display: none; text-align: center; }
+    #game-controls button { display: inline-block; width: auto; padding: 8px 15px; margin: 0 5px; font-size: 14px; }
+    #hud { position: fixed; top: 50px; left: 0; width: 100%; background: rgba(255,255,255,0.9); color: #1a1a2e; padding: 10px; z-index: 100; display: none; font-family: 'Orbitron', sans-serif; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    #game-container { position: relative; width: 100%; height: calc(100% - 100px); overflow: hidden; background: #0f3460; border: 2px solid #e94560; box-shadow: 0 0 20px rgba(233,69,96,0.5); }
+    #game-board { flex: 3; position: relative; width: 60vmin; height: 60vmin; margin: auto; background: #000; box-shadow: 0 0 10px rgba(0,255,234,0.5); }
+    #gameCanvas { width: 100%; height: 100%; border: none; }
+    #uiContainer { position: absolute; bottom: 0; width: 100%; display: flex; justify-content: center; padding: 10px; background: rgba(0,0,0,0.5); }
+    #cards { display: flex; gap: 10px; }
+    .card { width: 80px; height: 120px; background-size: cover; border: 1px solid #fff; border-radius: 5px; cursor: pointer; position: relative; }
+    .card:hover { transform: scale(1.05); }
+    .timer { position: absolute; bottom: 5px; width: 100%; color: #fff; text-align: center; font-size: 1em; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
+    @media (max-width: 600px) { .card { width: 60px; height: 90px; } .timer { font-size: 0.8em; } }
+  </style>
+</head>
+<body>
+  <div id="game-controls">
+    <button id="game-menu-button">Menu</button>
+    <button id="game-restart-button">Restart</button>
+    <button id="game-instructions-button">Instructions</button>
+  </div>
+  <div id="hud"></div>
+
+  <div id="start-menu-screen" class="screen active">
+    <div class="container">
+      <img id="logo" src="https://oaidalleapiprodscus.blob.core.windows.net/private/org-GYnh8ffasQyyYY4klwAQrCqg/user-jpws20EdWU4AN9FWb7rbrE4p/img-80JYaLO7dCVeNTAQxPW1nssr.png" alt="Logo" style="max-width:300px;margin-bottom:20px;">
+      <h1 id="game-title">The Bank Heist - Cards Edition</h1>
+      <button id="play-button">Play</button>
+      <button id="settings-button">Settings</button>
+      <button id="instructions-button">Instructions</button>
+    </div>
+  </div>
+
+  <div id="settings-screen" class="screen">
+    <div class="container">
+      <h2>Settings</h2>
+      <button id="settings-back-button">Back</button>
+    </div>
+  </div>
+
+  <div id="instructions-screen" class="screen">
+    <div class="container">
+      <h2>Instructions</h2>
+      <h3>How to Play:</h3>
+      <ul>
+        <li>Move using Arrow keys / WASD or swipe (mobile).</li>
+        <li>Collect the vault key and reach the exit.</li>
+        <li>Activate cards by tapping images below.</li>
+      </ul>
+      <h3>Controls:</h3>
+      <ul>
+        <li>Dash: doubles speed for 10s.</li>
+        <li>Stealth: invisibility for 10s.</li>
+        <li>Disable: freeze guards for 10s.</li>
+      </ul>
+      <button id="instructions-back-button">Back</button>
+    </div>
+  </div>
+
+  <div id="game-screen" class="screen">
+    <div id="game-container">
+      <div id="game-board"><canvas id="gameCanvas"></canvas></div>
+      <div id="uiContainer">
+        <div id="cards">
+          <div class="card" data-type="DASH"><img src="images/card_dash.png" alt="Dash"><div class="timer">10</div></div>
+          <div class="card" data-type="STEALTH"><img src="images/card_stealth.png" alt="Stealth"><div class="timer">10</div></div>
+          <div class="card" data-type="DISABLE"><img src="images/card_disable.png" alt="Disable"><div class="timer">10</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="game-over-screen" class="screen">
+    <div class="container">
+      <h2 id="game-over-message">Game Over! You were caught.</h2>
+      <button id="play-again-button">Play Again</button>
+      <button id="main-menu-button">Main Menu</button>
+    </div>
+  </div>
+
+  <!-- Audio Assets -->
+  <audio id="background-music" autoplay loop><source src="sounds/bg_loop.mp3" type="audio/mpeg"></audio>
+  <audio id="dash-sound"><source src="sounds/dash.mp3" type="audio/mpeg"></audio>
+  <audio id="stealth-sound"><source src="sounds/stealth.mp3" type="audio/mpeg"></audio>
+  <audio id="disable-sound"><source src="sounds/disable.mp3" type="audio/mpeg"></audio>
+  <audio id="victory-sound"><source src="sounds/victory.mp3" type="audio/mpeg"></audio>
+  <audio id="game-over-sound"><source src="sounds/game_over.mp3" type="audio/mpeg"></audio>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    class GameUI {
+      constructor() {
+        this.startMenu = document.getElementById('start-menu-screen');
+        this.settings = document.getElementById('settings-screen');
+        this.instructions = document.getElementById('instructions-screen');
+        this.gameScreen = document.getElementById('game-screen');
+        this.gameOver = document.getElementById('game-over-screen');
+        this.hud = document.getElementById('hud');
+        this.controls = document.getElementById('game-controls');
+      }
+      swapTo(screen) {
+        [this.startMenu, this.settings, this.instructions, this.gameScreen, this.gameOver].forEach(s => s.classList.remove('active'));
+        screen.classList.add('active');
+        const isGame = screen === this.gameScreen;
+        this.hud.style.display = isGame ? 'block' : 'none';
+        this.controls.style.display = isGame ? 'block' : 'none';
+      }
+      showStart() { this.swapTo(this.startMenu); }
+      showSettings() { this.swapTo(this.settings); }
+      showInstructions() { this.swapTo(this.instructions); }
+      showGame() { this.swapTo(this.gameScreen); }
+      showGameOver(msg) { document.getElementById('game-over-message').textContent = msg; this.swapTo(this.gameOver); }
+    }
+
+    class GameLogic {
+      constructor() {
+        this.cols = 80; this.rows = 80;
+        this.cellSize = 1; // handled automatically by canvas fill
+        this.player = { x: 1, y: 1, speed: 1, stealth: false };
+        this.keyPos = { x: 78, y: 1 };
+        this.exitPos = { x: 78, y: 78 };
+        this.vaultKey = false;
+        this.guards = [];
+        this.deck = this.buildDeck();
+        this.hand = this.drawHand();
+        this.active = null;
+        this.timers = {};
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.width = this.canvas.offsetWidth;
+        this.canvas.height = this.canvas.offsetHeight;
+      }
+      init() {
+        this.spawnGuards();
+        this.bindInput();
+        this.loop();
+      }
+      buildDeck() { return ['DASH','DASH','STEALTH','STEALTH','DISABLE','DISABLE','DASH','STEALTH','DISABLE','STEALTH'].sort(() => Math.random()-0.5); }
+      drawHand() { return this.deck.splice(0,3); }
+      spawnGuards() { this.guards = [{x:78,y:40,dx:-1,dy:0},{x:40,y:78,dx:0,dy:-1}]; }
+      bindInput() {
+        window.addEventListener('keydown', e => { switch(e.key){ case 'ArrowUp': case 'w': this.move(0,-1); break; case 'ArrowDown': case 's': this.move(0,1); break; case 'ArrowLeft': case 'a': this.move(-1,0); break; case 'ArrowRight': case 'd': this.move(1,0); break;} });
+        document.querySelectorAll('.card').forEach(card => card.onclick = () => this.activate(card.dataset.type));
+      }
+      move(dx,dy) {
+        const speed = this.active==='DASH'?2:1;
+        this.player.x = Math.max(0, Math.min(this.cols-1, this.player.x+dx*speed));
+        this.player.y = Math.max(0, Math.min(this.rows-1, this.player.y+dy*speed));
+        if(this.active==='DASH') this.deactivate();
+        this.checkKey();
+        this.checkExit();
+      }
+      activate(type) {
+        if(this.active) return;
+        this.active = type;
+        this.timers[type] = 10;
+        document.querySelectorAll(`.card[data-type="${type}"] .timer`)[0].textContent = 10;
+        document.getElementById(`${type.toLowerCase()}-sound`).play();
+      }
+      deactivate() {
+        this.active = null;
+        this.hand.push(this.deck.pop());
+      }
+      checkKey() { if(!this.vaultKey && this.player.x===this.keyPos.x&&this.player.y===this.keyPos.y){ this.vaultKey=true; }}
+      checkExit() { if(this.vaultKey && this.player.x===this.exitPos.x&&this.player.y===this.exitPos.y){ this.onWin(); }}
+      update(dt) {
+        // timers
+        if(this.active){ this.timers[this.active]-=dt; document.querySelectorAll(`.card[data-type="${this.active}"] .timer`)[0].textContent = Math.ceil(this.timers[this.active]); if(this.timers[this.active]<=0) this.deactivate(); }
+        // guard movement
+        this.guards.forEach(g => { g.x+=g.dx; g.y+=g.dy; if(Math.random()<0.01) [g.dx,g.dy]=[Math.floor(Math.random()*3)-1,Math.floor(Math.random()*3)-1]; if(Math.abs(g.x-this.player.x)<=1&&Math.abs(g.y-this.player.y)<=1&&!this.active==='STEALTH') this.onLose(); });
+      }
+      draw() {
+        const ctx=this.ctx; ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+        const cw=this.canvas.width/this.cols, ch=this.canvas.height/this.rows;
+        // key
+        if(!this.vaultKey){ ctx.fillStyle='orange'; ctx.fillRect(this.keyPos.x*cw,this.keyPos.y*ch,cw,ch); }
+        // exit
+        ctx.fillStyle=this.vaultKey?'teal':'gray'; ctx.fillRect(this.exitPos.x*cw,this.exitPos.y*ch,cw,ch);
+        // player
+        ctx.fillStyle=this.active==='STEALTH'?'rgba(0,255,0,0.3)':'lime'; ctx.fillRect(this.player.x*cw,this.player.y*ch,cw,ch);
+        // guards
+        ctx.fillStyle='red'; this.guards.forEach(g=>ctx.fillRect(g.x*cw,g.y*ch,cw,ch));
+      }
+      loop() {
+        let then=performance.now(); const frame=now=>{ const dt=(now-then)/1000; then=now; this.update(dt); this.draw(); requestAnimationFrame(frame); };
+        requestAnimationFrame(frame);
+      }
+      onWin() { document.getElementById('victory-sound').play(); controller.ui.showGameOver('Heist Successful!'); }
+      onLose() { document.getElementById('game-over-sound').play(); controller.ui.showGameOver('Caught! Game Over'); }
+    }
+
+    class GameController {
+      constructor() { this.ui=new GameUI(); this.logic=new GameLogic(); this.assign(); }
+      assign() {
+        document.getElementById('play-button').onclick=()=>{ this.ui.showGame(); this.logic.init(); };
+        document.getElementById('settings-button').onclick=()=>this.ui.showSettings();
+        document.getElementById('instructions-button').onclick=()=>this.ui.showInstructions();
+        document.querySelector('#settings-back-button').onclick=()=>this.ui.showStart();
+        document.querySelector('#instructions-back-button').onclick=()=>this.ui.showStart();
+        document.getElementById('game-menu-button').onclick=()=>this.ui.showStart();
+        document.getElementById('game-restart-button').onclick=()=>{ this.logic=new GameLogic(); this.ui.showGame(); this.logic.init(); };
+        document.getElementById('game-instructions-button').onclick=()=>this.ui.showInstructions();
+        document.getElementById('play-again-button').onclick=()=>{ this.logic=new GameLogic(); this.ui.showGame(); this.logic.init(); };
+        document.getElementById('main-menu-button').onclick=()=>this.ui.showStart();
+      }
+    }
+
+    const controller=new GameController();
+  });
+  </script>
+</body>
+</html>
